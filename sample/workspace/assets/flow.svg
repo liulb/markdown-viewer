@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="150" viewBox="0 0 560 150" font-family="-apple-system,'Segoe UI','Noto Sans',sans-serif" font-size="13">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#5b6470"/>
+    </marker>
+  </defs>
+  <style>
+    .box { fill: #eef4ff; stroke: #7f9cf5; rx: 8; }
+    .lbl { fill: #2b3440; text-anchor: middle; dominant-baseline: central; }
+    .ln  { stroke: #5b6470; stroke-width: 1.4; fill: none; marker-end: url(#ar); }
+  </style>
+  <rect x="14" y="18" width="14" height="100" rx="0" fill="none"/>
+  <rect class="box" x="20" y="45" width="120" height="44" rx="8"/>
+  <text class="lbl" x="80" y="67">.md 文件</text>
+  <rect class="box" x="220" y="45" width="130" height="44" rx="8"/>
+  <text class="lbl" x="285" y="67">渲染管线</text>
+  <rect class="box" x="420" y="10" width="120" height="40" rx="8"/>
+  <text class="lbl" x="480" y="30">代码高亮</text>
+  <rect class="box" x="420" y="58" width="120" height="40" rx="8"/>
+  <text class="lbl" x="480" y="78">公式 / 图表</text>
+  <rect class="box" x="420" y="106" width="120" height="40" rx="8"/>
+  <text class="lbl" x="480" y="126">目录导航</text>
+  <line class="ln" x1="140" y1="67" x2="216" y2="67"/>
+  <path class="ln" d="M350 55 L416 32"/>
+  <path class="ln" d="M350 67 L416 78"/>
+  <path class="ln" d="M350 80 L416 122"/>
+</svg>

@@ -1,0 +1,582 @@
+/* ============================================================
+ * Markdown Viewer — UI 样式（工具栏 / 目录 / 锚点 / 源码视图）
+ * 主题变量由 html[data-mdv-theme] 控制，内容区样式由
+ * github-markdown.css 提供，此处只负责扩展自身的界面。
+ * ============================================================ */
+
+html[data-mdv-theme="light"] {
+  --mdv-bg: #ffffff;
+  --mdv-fg: #1f2328;
+  --mdv-muted: #59636e;
+  --mdv-border: #d1d9e0;
+  --mdv-panel: #f6f8fa;
+  --mdv-accent: #0969da;
+  --mdv-shadow: 0 8px 24px rgba(140, 149, 159, 0.2);
+  --mdv-code-bg: #f6f8fa;
+}
+
+html[data-mdv-theme="dark"] {
+  --mdv-bg: #0d1117;
+  --mdv-fg: #f0f6fc;
+  --mdv-muted: #9198a1;
+  --mdv-border: #3d444d;
+  --mdv-panel: #151b23;
+  --mdv-accent: #4493f8;
+  --mdv-shadow: 0 8px 24px rgba(1, 4, 9, 0.8);
+  --mdv-code-bg: #151b23;
+}
+
+html[data-mdv-theme="light"],
+html[data-mdv-theme="dark"] {
+  background-color: var(--mdv-bg);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body.mdv-source #mdv-toc,
+body.mdv-source #mdv-toolbar #mdv-btn-toc {
+  display: none;
+}
+
+body.mdv-active {
+  margin: 0;
+  background-color: var(--mdv-bg);
+  color: var(--mdv-fg);
+}
+
+/* ---------- 内容区 ---------- */
+
+#mdv-content {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 40px 56px 120px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  #mdv-content {
+    padding: 24px 20px 96px;
+  }
+}
+
+/* ---------- 悬浮工具栏 ---------- */
+
+#mdv-toolbar {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 99990;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--mdv-panel);
+  border: 1px solid var(--mdv-border);
+  border-radius: 10px;
+  box-shadow: var(--mdv-shadow);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+#mdv-toolbar button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--mdv-fg);
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+}
+
+#mdv-toolbar button:hover {
+  background: var(--mdv-accent);
+  color: #ffffff;
+}
+
+#mdv-toolbar button.mdv-on {
+  background: var(--mdv-accent);
+  color: #ffffff;
+}
+
+/* ---------- 目录面板 ---------- */
+
+#mdv-toc {
+  position: fixed;
+  top: 64px;
+  right: 16px;
+  bottom: 16px;
+  width: 280px;
+  z-index: 99980;
+  overflow-y: auto;
+  padding: 12px 8px 16px 4px;
+  background: var(--mdv-panel);
+  border: 1px solid var(--mdv-border);
+  border-radius: 10px;
+  box-shadow: var(--mdv-shadow);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+#mdv-toc .mdv-toc-title {
+  padding: 2px 12px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--mdv-muted);
+  text-transform: uppercase;
+}
+
+#mdv-toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#mdv-toc ul ul {
+  padding-left: 14px;
+}
+
+#mdv-toc a {
+  display: block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: var(--mdv-fg);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#mdv-toc a:hover {
+  color: var(--mdv-accent);
+  background: var(--mdv-code-bg);
+}
+
+#mdv-toc a.mdv-active {
+  color: var(--mdv-accent);
+  font-weight: 600;
+  background: var(--mdv-code-bg);
+}
+
+body:not(.mdv-toc-open) #mdv-toc {
+  display: none;
+}
+
+/* 目录打开时内容向左让位，避免面板遮挡正文/图表（窄屏下目录为浮层，不让位） */
+@media (min-width: 1200px) {
+  body.mdv-toc-open #mdv-content {
+    margin-right: 324px;
+  }
+}
+
+@media (max-width: 1100px) {
+  #mdv-toc {
+    right: 8px;
+    width: 240px;
+  }
+}
+
+/* ---------- 标题锚点 ---------- */
+
+#mdv-content h1,
+#mdv-content h2,
+#mdv-content h3,
+#mdv-content h4,
+#mdv-content h5,
+#mdv-content h6 {
+  scroll-margin-top: 24px;
+  position: relative;
+}
+
+#mdv-content .mdv-anchor {
+  position: absolute;
+  left: -20px;
+  padding-right: 6px;
+  color: var(--mdv-accent);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+#mdv-content h1:hover .mdv-anchor,
+#mdv-content h2:hover .mdv-anchor,
+#mdv-content h3:hover .mdv-anchor,
+#mdv-content h4:hover .mdv-anchor,
+#mdv-content h5:hover .mdv-anchor,
+#mdv-content h6:hover .mdv-anchor {
+  opacity: 1;
+}
+
+/* ---------- 源码视图 ---------- */
+
+#mdv-source {
+  display: none;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 40px 56px 120px;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  font-family: var(--fontStack-monospace, ui-monospace, SFMono-Regular, Menlo,
+    Consolas, monospace);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--mdv-fg);
+  tab-size: 4;
+}
+
+body.mdv-source #mdv-source {
+  display: block;
+}
+
+body.mdv-source #mdv-content {
+  display: none;
+}
+
+/* ---------- Mermaid 图表 ---------- */
+
+#mdv-content .mdv-mermaid {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+  background: var(--mdv-bg);
+}
+
+#mdv-content .mdv-mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ---------- 工作区（扩展内页面） ---------- */
+
+#mdv-hero {
+  position: fixed;
+  inset: 0;
+  z-index: 99995;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mdv-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+#mdv-hero[hidden] {
+  display: none;
+}
+
+.mdv-hero-box {
+  width: 460px;
+  max-width: calc(100vw - 48px);
+  padding: 40px 36px;
+  text-align: center;
+  border: 1px solid var(--mdv-border);
+  border-radius: 14px;
+  background: var(--mdv-panel);
+}
+
+.mdv-hero-box h1 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  color: var(--mdv-fg);
+}
+
+.mdv-hero-box p {
+  margin: 0 0 24px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--mdv-muted);
+}
+
+.mdv-hero-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.mdv-hero-actions .mdv-btn {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--mdv-border);
+  border-radius: 8px;
+  background: var(--mdv-bg);
+  color: var(--mdv-fg);
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.mdv-hero-actions .mdv-btn:hover {
+  border-color: var(--mdv-accent);
+  color: var(--mdv-accent);
+}
+
+.mdv-hero-actions .mdv-btn.mdv-suggested {
+  border-color: var(--mdv-accent);
+  color: var(--mdv-accent);
+  font-weight: 600;
+  box-shadow: 0 0 0 3px var(--mdv-neutral-muted, rgba(9, 105, 218, 0.15));
+}
+
+#mdv-hero .mdv-hint {
+  margin: 18px 0 0;
+  font-size: 12px;
+  color: var(--mdv-muted);
+}
+
+.mdv-recent {
+  margin: 20px 0 0;
+  text-align: left;
+}
+
+.mdv-recent h2 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mdv-muted);
+}
+
+.mdv-recent button {
+  display: block;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  text-align: left;
+  border: 1px solid var(--mdv-border);
+  border-radius: 8px;
+  background: var(--mdv-bg);
+  color: var(--mdv-fg);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mdv-recent button:hover {
+  border-color: var(--mdv-accent);
+  color: var(--mdv-accent);
+}
+
+/* 工作区文件树（左侧面板） */
+
+#mdv-ws {
+  position: fixed;
+  left: 16px;
+  top: 64px;
+  bottom: 16px;
+  width: 260px;
+  z-index: 99980;
+  display: flex;
+  flex-direction: column;
+  background: var(--mdv-panel);
+  border: 1px solid var(--mdv-border);
+  border-radius: 10px;
+  box-shadow: var(--mdv-shadow);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+#mdv-ws[hidden] {
+  display: none;
+}
+
+#mdv-ws .mdv-ws-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px 8px;
+}
+
+#mdv-ws .mdv-ws-title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mdv-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#mdv-ws .mdv-ws-head button {
+  border: none;
+  background: transparent;
+  color: var(--mdv-muted);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+#mdv-ws .mdv-ws-head button:hover {
+  background: var(--mdv-code-bg);
+  color: var(--mdv-fg);
+}
+
+#mdv-ws .mdv-ws-tree {
+  flex: 1;
+  overflow: auto;
+  padding: 0 6px 10px;
+}
+
+#mdv-ws ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#mdv-ws ul ul {
+  padding-left: 13px;
+}
+
+#mdv-ws summary {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--mdv-muted);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#mdv-ws summary:hover {
+  color: var(--mdv-fg);
+  background: var(--mdv-code-bg);
+}
+
+#mdv-ws a.mdv-ws-file {
+  display: block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: var(--mdv-fg);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+#mdv-ws a.mdv-ws-file:hover {
+  color: var(--mdv-accent);
+  background: var(--mdv-code-bg);
+}
+
+#mdv-ws a.mdv-ws-file.mdv-active {
+  color: var(--mdv-accent);
+  font-weight: 600;
+  background: var(--mdv-code-bg);
+}
+
+@media (min-width: 1200px) {
+  body.mdv-ws-open #mdv-content {
+    margin-left: 304px;
+  }
+}
+
+body.mdv-source #mdv-ws {
+  display: none;
+}
+
+/* 工作区内无法解析的相对引用 */
+#mdv-content a.mdv-ws-missing,
+#mdv-content img.mdv-ws-missing {
+  opacity: 0.45;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+/* 拖拽导入遮罩 */
+#mdv-drop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--mdv-bg) 75%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+#mdv-drop.mdv-drag {
+  display: flex;
+}
+
+#mdv-drop span {
+  padding: 18px 32px;
+  border: 2px dashed var(--mdv-accent);
+  border-radius: 14px;
+  color: var(--mdv-accent);
+  font-size: 15px;
+  font-weight: 600;
+  background: var(--mdv-panel);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+    Helvetica, Arial, sans-serif;
+}
+
+/* 页面内错误提示条 */
+.mdv-error-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 100000;
+  max-width: min(720px, 86vw);
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: #b62324;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+    Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- 打印 ---------- */
+
+@media print {
+  #mdv-toolbar,
+  #mdv-toc {
+    display: none !important;
+  }
+
+  #mdv-content {
+    max-width: none;
+    padding: 0;
+  }
+
+  html[data-mdv-theme],
+  html[data-mdv-theme="dark"] {
+    --mdv-bg: #ffffff;
+    background-color: #ffffff;
+  }
+
+  html[data-mdv-theme="dark"] .markdown-body {
+    color-scheme: light;
+    --fgColor-default: #1f2328;
+    --bgColor-default: #ffffff;
+  }
+}

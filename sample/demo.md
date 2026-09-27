@@ -1,0 +1,184 @@
+# Markdown Viewer 功能演示
+
+这是一个**演示文档**，用于测试插件的各项渲染能力：*GFM 扩展语法*、代码高亮、数学公式、Mermaid 图表、目录导航与暗色模式。
+
+打开任意 `.md` / `.markdown` / `.mdown` / `.mkd` 文件即可自动渲染，右上角工具栏可以切换 [目录](#目录) · [源码视图](#原始文本) · [主题](#主题)。
+
+## 基础语法
+
+### 行内元素
+
+普通段落支持 **加粗**、*斜体*、***粗斜体***、~~删除线~~、`行内代码`、[链接](https://developer.mozilla.org/)，以及自动链接：https://github.com 。
+
+> 引用块：任何足够先进的科学技术，都与魔法无异。
+>
+> —— 亚瑟·克拉克
+
+### 列表
+
+1. 有序列表第一项
+2. 有序列表第二项
+   - 嵌套无序项 A
+   - 嵌套无序项 B
+     - 更深层嵌套
+3. 有序列表第三项
+
+任务清单（GFM）：
+
+- [x] 支持 GFM 表格
+- [x] 代码语法高亮
+- [x] 数学公式渲染
+- [ ] 导出 DOCX / PDF（规划中）
+- [ ] 更多主题（规划中）
+
+### 分割线
+
+---
+
+## 表格
+
+| 特性 | 状态 | 说明 |
+| :--- | :---: | ---: |
+| GFM 渲染 | ✅ | 表格、任务列表、删除线 |
+| 代码高亮 | ✅ | 基于 highlight.js |
+| 数学公式 | ✅ | 基于 KaTeX |
+| 图表 | ✅ | Mermaid 流程图/时序图 |
+| 暗色模式 | ✅ | 跟随系统或手动切换 |
+
+## 代码高亮
+
+```javascript
+// 斐波那契数列：记忆化递归
+const memo = new Map();
+
+function fib(n) {
+  if (n <= 1) return n;
+  if (memo.has(n)) return memo.get(n);
+  const value = fib(n - 1) + fib(n - 2);
+  memo.set(n, value);
+  return value;
+}
+
+console.log(Array.from({ length: 10 }, (_, i) => fib(i)));
+// → [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+```
+
+```python
+"""快速排序"""
+def quicksort(arr):
+    if len(arr) <= 1:
+        return arr
+    pivot = arr[len(arr) // 2]
+    left = [x for x in arr if x < pivot]
+    middle = [x for x in arr if x == pivot]
+    right = [x for x in arr if x > pivot]
+    return quicksort(left) + middle + quicksort(right)
+
+print(quicksort([3, 6, 8, 10, 1, 2, 1]))
+```
+
+```bash
+#!/usr/bin/env bash
+# 统计当前目录下各类文件的行数
+find . -name "*.md" -type f -print0 |
+  xargs -0 wc -l |
+  sort -rn | head -n 10
+```
+
+```json
+{
+  "name": "markdown-viewer",
+  "version": "1.0.0",
+  "features": ["gfm", "highlight", "katex", "mermaid"],
+  "privacy": "完全本地处理，不上传任何数据"
+}
+```
+
+## 数学公式
+
+行内公式：质能方程 $E = mc^2$，欧拉恒等式 $e^{i\pi} + 1 = 0$。
+
+块级公式（高斯积分）：
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2} \, dx = \sqrt{\pi}
+$$
+
+矩阵与求和：
+
+$$
+A = \begin{pmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{pmatrix},
+\qquad
+\sum_{k=1}^{n} k = \frac{n(n+1)}{2}
+$$
+
+## Mermaid 图表
+
+### 流程图
+
+```mermaid
+flowchart LR
+    A[Markdown 文件] --> B{插件检测}
+    B -->|.md 文件| C[marked 解析]
+    B -->|普通网页| D[不介入]
+    C --> E[代码高亮]
+    C --> F[公式渲染]
+    C --> G[图表渲染]
+    E --> H[精美页面]
+    F --> H
+    G --> H
+```
+
+### 时序图
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant D as 探测器
+    participant B as 后台
+    participant V as 渲染器
+
+    U->>D: 打开 .md 文件
+    D->>B: MDV_RENDER
+    B->>V: 注入渲染脚本
+    V->>U: 展示渲染结果
+```
+
+## HTML 元素
+
+Markdown 中允许包含受控的 HTML（`<script>` 与事件属性会被过滤）：
+
+<details>
+<summary>点击展开：隐私说明</summary>
+
+所有渲染均在浏览器本地完成，<strong>不会上传任何内容</strong>，也不收集任何数据。
+
+</details>
+
+## 主题
+
+插件内置 **浅色 / 深色 / 跟随系统** 三种主题模式：
+
+1. 点击工具栏的 ◐ 按钮循环切换
+2. 或在扩展弹窗中选择固定模式
+3. 深色模式下代码高亮与 Mermaid 图表会同步换肤
+
+### 嵌套标题
+
+#### 四级标题
+
+用于验证目录的多级缩进。
+
+##### 五级标题
+
+目录最深支持到六级。
+
+###### 六级标题
+
+到这里目录结构就完整了。
+
+## 结语
+
+- 相对链接与图片在本地文件中同样有效
+- 目录支持滚动定位，点击跳转
+- 完全离线可用，无任何网络请求

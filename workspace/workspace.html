@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-mdv-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- 与 MV3 扩展页默认 CSP 一致，保证本地调试与真实环境行为相同 -->
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'self'">
+  <title>Markdown Viewer 工作区</title>
+  <link rel="stylesheet" href="../styles/viewer.css">
+</head>
+<body class="mdv-active">
+  <!-- 主屏：选择入口。data-mdv-keep 使 content.js 重建渲染壳时保留这些节点 -->
+  <div id="mdv-hero" data-mdv-keep>
+    <div class="mdv-hero-box">
+      <h1>Markdown Viewer 工作区</h1>
+      <p>打开本地 Markdown 文件或整个文件夹，在左侧文件树中切换浏览。<br>文件仅在本地读取与渲染，不会上传。</p>
+      <div class="mdv-hero-actions">
+        <button type="button" class="mdv-btn" id="ws-pick-file">打开 Markdown 文件</button>
+        <button type="button" class="mdv-btn" id="ws-pick-folder">打开文件夹（工作区）</button>
+      </div>
+      <div class="mdv-recent" id="ws-recent" hidden>
+        <h2>最近打开</h2>
+        <div id="ws-recent-list"></div>
+      </div>
+      <p class="mdv-hint">也可以把文件或文件夹直接拖进本页面，或 <a href="#" id="ws-demo">加载示例工作区</a></p>
+      <input type="file" id="ws-file-input" accept=".md,.markdown,.mdown,.mkd,text/markdown,text/plain" hidden>
+    </div>
+  </div>
+
+  <!-- 左侧文件树 -->
+  <aside id="mdv-ws" data-mdv-keep hidden>
+    <div class="mdv-ws-head">
+      <span class="mdv-ws-title" id="ws-title">工作区</span>
+      <button type="button" id="ws-change" title="更换文件 / 文件夹">⇆</button>
+    </div>
+    <div class="mdv-ws-tree" id="ws-tree"></div>
+  </aside>
+
+  <!-- 拖拽遮罩 -->
+  <div id="mdv-drop" data-mdv-keep><span>松开以在 Markdown Viewer 中打开</span></div>
+
+  <script src="../lib/marked.min.js"></script>
+  <script src="../lib/hljs.min.js"></script>
+  <script src="../lib/katex.min.js"></script>
+  <script src="../lib/auto-render.min.js"></script>
+  <script src="../lib/mermaid.min.js"></script>
+  <script src="../src/content.js"></script>
+  <script src="workspace.js"></script>
+</body>
+</html>

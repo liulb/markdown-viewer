@@ -1,0 +1,57 @@
+/* highlight.js GitHub light theme - scoped to html[data-mdv-theme="light"] */
+pre code.hljs{display:block;overflow-x:auto;padding:1em}
+code.hljs{padding:3px 5px}
+/*!
+  Theme: GitHub
+  Description: Light theme as seen on github.com
+  Author: github.com
+  Maintainer: @Hirse
+  Updated: 2021-05-15
+
+  Outdated base version: https://github.com/primer/github-syntax-light
+  Current colors taken from GitHub's CSS
+*/
+html[data-mdv-theme="light"] .hljs{color:#24292e;background:#fff}
+html[data-mdv-theme="light"] .hljs-doctag,.hljs-keyword,.hljs-meta .hljs-keyword,.hljs-template-tag,.hljs-template-variable,.hljs-type,.hljs-variable.language_{color:#d73a49}
+html[data-mdv-theme="light"] .hljs-title,.hljs-title.class_,.hljs-title.class_.inherited__,.hljs-title.function_{color:#6f42c1}
+html[data-mdv-theme="light"] .hljs-attr,.hljs-attribute,.hljs-literal,.hljs-meta,.hljs-number,.hljs-operator,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-id,.hljs-variable{color:#005cc5}
+html[data-mdv-theme="light"] .hljs-meta .hljs-string,.hljs-regexp,.hljs-string{color:#032f62}
+html[data-mdv-theme="light"] .hljs-built_in,.hljs-symbol{color:#e36209}
+html[data-mdv-theme="light"] .hljs-code,.hljs-comment,.hljs-formula{color:#6a737d}
+html[data-mdv-theme="light"] .hljs-name,.hljs-quote,.hljs-selector-pseudo,.hljs-selector-tag{color:#22863a}
+html[data-mdv-theme="light"] .hljs-subst{color:#24292e}
+html[data-mdv-theme="light"] .hljs-section{color:#005cc5;font-weight:700}
+html[data-mdv-theme="light"] .hljs-bullet{color:#735c0f}
+html[data-mdv-theme="light"] .hljs-emphasis{color:#24292e;font-style:italic}
+html[data-mdv-theme="light"] .hljs-strong{color:#24292e;font-weight:700}
+html[data-mdv-theme="light"] .hljs-addition{color:#22863a;background-color:#f0fff4}
+html[data-mdv-theme="light"] .hljs-deletion{color:#b31d28;background-color:#ffeef0}
+
+/* highlight.js GitHub dark theme - scoped to html[data-mdv-theme="dark"] */
+pre code.hljs{display:block;overflow-x:auto;padding:1em}
+code.hljs{padding:3px 5px}
+/*!
+  Theme: GitHub Dark
+  Description: Dark theme as seen on github.com
+  Author: github.com
+  Maintainer: @Hirse
+  Updated: 2021-05-15
+
+  Outdated base version: https://github.com/primer/github-syntax-dark
+  Current colors taken from GitHub's CSS
+*/
+html[data-mdv-theme="dark"] .hljs{color:#c9d1d9;background:#0d1117}
+html[data-mdv-theme="dark"] .hljs-doctag,.hljs-keyword,.hljs-meta .hljs-keyword,.hljs-template-tag,.hljs-template-variable,.hljs-type,.hljs-variable.language_{color:#ff7b72}
+html[data-mdv-theme="dark"] .hljs-title,.hljs-title.class_,.hljs-title.class_.inherited__,.hljs-title.function_{color:#d2a8ff}
+html[data-mdv-theme="dark"] .hljs-attr,.hljs-attribute,.hljs-literal,.hljs-meta,.hljs-number,.hljs-operator,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-id,.hljs-variable{color:#79c0ff}
+html[data-mdv-theme="dark"] .hljs-meta .hljs-string,.hljs-regexp,.hljs-string{color:#a5d6ff}
+html[data-mdv-theme="dark"] .hljs-built_in,.hljs-symbol{color:#ffa657}
+html[data-mdv-theme="dark"] .hljs-code,.hljs-comment,.hljs-formula{color:#8b949e}
+html[data-mdv-theme="dark"] .hljs-name,.hljs-quote,.hljs-selector-pseudo,.hljs-selector-tag{color:#7ee787}
+html[data-mdv-theme="dark"] .hljs-subst{color:#c9d1d9}
+html[data-mdv-theme="dark"] .hljs-section{color:#1f6feb;font-weight:700}
+html[data-mdv-theme="dark"] .hljs-bullet{color:#f2cc60}
+html[data-mdv-theme="dark"] .hljs-emphasis{color:#c9d1d9;font-style:italic}
+html[data-mdv-theme="dark"] .hljs-strong{color:#c9d1d9;font-weight:700}
+html[data-mdv-theme="dark"] .hljs-addition{color:#aff5b4;background-color:#033a16}
+html[data-mdv-theme="dark"] .hljs-deletion{color:#ffdcd7;background-color:#67060c}

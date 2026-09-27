@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-mdv-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Markdown Viewer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="../icons/icon48.png" alt="" width="20" height="20">
+    <h1>Markdown Viewer</h1>
+  </header>
+
+  <main>
+    <p id="status" class="status">正在检查当前页面…</p>
+
+    <section id="controls" hidden>
+      <h2>阅读视图</h2>
+      <div class="seg" role="radiogroup" aria-label="阅读视图">
+        <button type="button" data-view="rendered">渲染视图</button>
+        <button type="button" data-view="source">原始文本</button>
+      </div>
+
+      <h2>主题</h2>
+      <div class="seg" role="radiogroup" aria-label="主题">
+        <button type="button" data-theme="auto">跟随系统</button>
+        <button type="button" data-theme="light">浅色</button>
+        <button type="button" data-theme="dark">深色</button>
+      </div>
+
+      <dl id="stats">
+        <div><dt>字符</dt><dd id="stat-chars">–</dd></div>
+        <div><dt>行数</dt><dd id="stat-lines">–</dd></div>
+        <div><dt>标题</dt><dd id="stat-headings">–</dd></div>
+      </dl>
+    </section>
+  </main>
+
+  <footer>
+    <div class="actions">
+      <button type="button" id="open-file">📄 打开文件</button>
+      <button type="button" id="open-folder">📁 打开工作区</button>
+    </div>
+    <label>
+      <input type="checkbox" id="opt-toc" checked>
+      有标题时自动打开目录
+    </label>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
