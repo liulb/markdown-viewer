@@ -41,15 +41,30 @@ html[data-mdv-theme="dark"] {
   background-color: var(--mdv-bg);
 }
 
-html {
-  scroll-behavior: smooth;
-  scroll-padding-top: calc(var(--mdv-header-h) + 16px);
-}
-
 body.mdv-active {
   margin: 0;
+  height: 100vh;
+  overflow: hidden; /* 页面本身不滚动，三栏各自滚动 */
   background-color: var(--mdv-bg);
   color: var(--mdv-fg);
+}
+
+/* ---------- 中间滚动容器 ---------- */
+
+#mdv-main {
+  position: fixed;
+  top: var(--mdv-header-h);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-top: 16px;
+}
+
+@media (min-width: 1200px) {
+  body.mdv-toc-open #mdv-main { left: var(--mdv-toc-w); }
+  body.mdv-ws-open #mdv-main { right: var(--mdv-ws-w); }
 }
 
 /* ---------- 顶栏 ---------- */
@@ -150,7 +165,7 @@ body.mdv-ws-open #mdv-btn-ws { display: flex; }
   max-width: 1100px;
   width: 100%;
   margin: 0 auto;
-  padding: calc(var(--mdv-header-h) + 28px) 56px 120px;
+  padding: 28px 56px 120px;
   box-sizing: border-box;
   font-size: calc(16px * var(--mdv-zoom, 1));
 }
@@ -171,12 +186,6 @@ body.mdv-ws-open #mdv-btn-ws { display: flex; }
   }
 }
 
-/* 面板打开时内容让位（宽屏停靠，窄屏为浮层不让位） */
-@media (min-width: 1200px) {
-  body.mdv-toc-open #mdv-content { margin-left: var(--mdv-toc-w); }
-  body.mdv-ws-open #mdv-content { margin-right: var(--mdv-ws-w); }
-}
-
 /* ---------- 左侧目录面板 ---------- */
 
 #mdv-toc {
@@ -190,6 +199,7 @@ body.mdv-ws-open #mdv-btn-ws { display: flex; }
   padding: 14px 8px 24px 4px;
   background: var(--mdv-panel);
   border-right: 1px solid var(--mdv-border);
+  overscroll-behavior: contain;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
     Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 }
@@ -309,6 +319,54 @@ body:not(.mdv-toc-open) #mdv-toc {
   display: block;
 }
 
+#mdv-ws .mdv-ws-head button.mdv-on {
+  background: var(--mdv-accent);
+  color: #ffffff;
+}
+
+/* ---------- 导出菜单 ---------- */
+
+#mdv-export-menu {
+  position: fixed;
+  z-index: 99995;
+  min-width: 190px;
+  padding: 6px;
+  background: var(--mdv-panel);
+  border: 1px solid var(--mdv-border);
+  border-radius: 10px;
+  box-shadow: var(--mdv-shadow);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+#mdv-export-menu[hidden] {
+  display: none;
+}
+
+.mdv-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--mdv-fg);
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.mdv-menu-item:hover:not(:disabled) {
+  background: var(--mdv-code-bg);
+  color: var(--mdv-accent);
+}
+
+.mdv-menu-item:disabled {
+  color: var(--mdv-muted);
+  opacity: 0.6;
+  cursor: default;
+}
+
 #mdv-ws .mdv-ws-search {
   padding: 0 10px 8px;
 }
@@ -333,6 +391,7 @@ body:not(.mdv-toc-open) #mdv-toc {
   flex: 1;
   overflow: auto;
   padding: 0 6px 12px;
+  overscroll-behavior: contain;
 }
 
 #mdv-ws ul {
@@ -418,7 +477,7 @@ body.mdv-source #mdv-header #mdv-btn-ws {
 #mdv-content h4,
 #mdv-content h5,
 #mdv-content h6 {
-  scroll-margin-top: calc(var(--mdv-header-h) + 16px);
+  /* 落点偏移统一由 html 的 scroll-padding-top 控制（避免双重叠加） */
   position: relative;
 }
 
@@ -448,10 +507,9 @@ body.mdv-source #mdv-header #mdv-btn-ws {
   max-width: 1100px;
   width: 100%;
   margin: 0 auto;
-  padding: calc(var(--mdv-header-h) + 28px) 56px 120px;
+  padding: 28px 0 120px;
   box-sizing: border-box;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
+  overflow: auto;
   font-family: var(--fontStack-monospace, ui-monospace, SFMono-Regular, Menlo,
     Consolas, monospace);
   font-size: calc(13.5px * var(--mdv-zoom, 1));
@@ -461,7 +519,32 @@ body.mdv-source #mdv-header #mdv-btn-ws {
 }
 
 body.mdv-source #mdv-source {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+}
+
+.mdv-src-gutter {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  flex: none;
+  padding: 0 10px 120px 20px;
+  text-align: right;
+  white-space: pre;
+  color: var(--mdv-muted);
+  background: var(--mdv-bg);
+  border-right: 1px solid var(--mdv-border);
+  user-select: none;
+}
+
+.mdv-src-text {
+  flex: 1 0 auto;
+  margin: 0;
+  padding: 0 24px 120px 16px;
+  white-space: pre;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 body.mdv-source #mdv-content {
@@ -668,8 +751,26 @@ body.mdv-source #mdv-content {
 @media print {
   #mdv-header,
   #mdv-toc,
-  #mdv-ws {
+  #mdv-ws,
+  #mdv-export-menu {
     display: none !important;
+  }
+
+  #mdv-main {
+    position: static;
+    overflow: visible;
+    inset: auto;
+  }
+
+  body.mdv-active {
+    overflow: visible;
+    height: auto;
+  }
+
+  body.mdv-toc-open #mdv-main,
+  body.mdv-ws-open #mdv-main {
+    left: auto;
+    right: auto;
   }
 
   #mdv-content,

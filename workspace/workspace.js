@@ -22,6 +22,23 @@
   const wsPanel = $('#mdv-ws');
   const tree = $('#ws-tree');
 
+  // 面板内滚轮隔离：文件树滚到头/滚不动时不再链式滚动正文
+  (() => {
+    const panel = $('#mdv-ws');
+    const scroller = panel.querySelector('.mdv-ws-tree');
+    panel.addEventListener('wheel', e => {
+      if (!e.deltaY) return;
+      const overTree = scroller.contains(e.target);
+      if (!overTree) { e.preventDefault(); return; } // 头部/搜索框区域不带动正文
+      const canScroll = scroller.scrollHeight > scroller.clientHeight;
+      const atTop = scroller.scrollTop <= 0;
+      const atEnd = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+      if (!canScroll || (e.deltaY < 0 && atTop) || (e.deltaY > 0 && atEnd)) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+  })();
+
   // ---------- 可见错误提示：任何失败都不能只留在控制台 ----------
   function showBanner(msg) {
     let banner = document.getElementById('mdv-error-banner');
@@ -45,6 +62,7 @@
   let wsCurrent = null;      // 当前文件的工作区相对路径
   let wsLabel = '';          // 面板标题：文件夹名 / 拖入的文件 / 示例工作区
   let wsMode = 'file';       // 'file' | 'folder'
+  let wsDemo = false;        // 当前是否为示例工作区（刷新恢复标记用）
   let booted = false;
   let blobCache = new Map(); // 工作区相对路径 -> objectURL
 
@@ -208,6 +226,26 @@
 
   $('#ws-search').addEventListener('input', applyFileFilter);
 
+  // ---------- 搜索框显隐：点 🔍 展开/收起 ----------
+  const searchRow = $('#ws-search-row');
+  const searchBtn = $('#ws-toggle-search');
+
+  function setSearchVisible(visible) {
+    searchRow.hidden = !visible;
+    searchBtn.classList.toggle('mdv-on', visible);
+    if (visible) {
+      $('#ws-search').focus();
+    } else {
+      $('#ws-search').value = '';
+      applyFileFilter();
+    }
+  }
+
+  searchBtn.addEventListener('click', () => setSearchVisible(searchRow.hidden));
+  $('#ws-search').addEventListener('keydown', e => {
+    if (e.key === 'Escape') setSearchVisible(false);
+  });
+
   function markActive(path) {
     tree.querySelectorAll('a.mdv-ws-file').forEach(a =>
       a.classList.toggle('mdv-active', a.dataset.path === path));
@@ -278,6 +316,13 @@
       const text = await file.text();
       wsCurrent = path;
       window.__MDV_DOC_NAME = path.split('/').pop();
+      if (wsMode === 'folder') {
+        // 刷新恢复用：按"工作区/文件"维度记录位置键与状态
+        window.__MDV_POS_KEY__ = 'ws:' + wsLabel + '/' + path;
+        saveWsState(path);
+      } else {
+        try { sessionStorage.removeItem(WS_STATE_KEY); } catch (e) {}
+      }
       if (!booted) {
         booted = true;
         hero.hidden = true;
@@ -307,9 +352,10 @@
     $('#ws-title').title = label;
   }
 
-  async function openDirectory(dirHandle) {
+  async function openDirectory(dirHandle, preferPath) {
     resetWorkspace();
     wsMode = 'folder';
+    wsDemo = false;
     wsLabel = dirHandle.name;
     // 立即给出可见反馈：大文件夹扫描可能持续数秒
     showPanel(dirHandle.name + '（正在扫描…）');
@@ -325,7 +371,7 @@
     showPanel(dirHandle.name + (state.count ? `（${state.count} 个文件）` : ''));
     buildTree();
     saveRecent(dirHandle);
-    await openFirstOrNotice();
+    await openFirstOrNotice(preferPath);
 
     if (state.errors.length) {
       showBanner(
@@ -336,8 +382,8 @@
     }
   }
 
-  async function openFirstOrNotice() {
-    const first = pickDefaultFile();
+  async function openFirstOrNotice(preferPath) {
+    const first = preferPath && wsFiles.has(preferPath) ? preferPath : pickDefaultFile();
     if (first) { await openFile(first); return; }
     const notice = '> 此文件夹中没有找到 Markdown 文件。\n>\n> 支持的扩展名：`.md` `.markdown` `.mdown` `.mkd`\n>\n> 点击左上角 ⇆ 可重新选择。';
     window.__MDV_DOC_NAME = wsLabel;
@@ -355,6 +401,7 @@
     resetWorkspace();
     wsFiles.set(file.name, { kind: 'file', name: file.name, getFile: async () => file });
     wsMode = 'file';
+    wsDemo = false;
     wsPanel.hidden = true;
     document.body.classList.remove('mdv-ws-open');
     await openFile(file.name);
@@ -464,10 +511,20 @@
   });
 
   // ---------- 示例工作区（无本地权限要求，也用于自动化测试） ----------
-  async function openDemo() {
+  // ---------- 刷新恢复：记录并还原当前工作区与文件 ----------
+  const WS_STATE_KEY = 'mdv-ws-state';
+
+  function saveWsState(path) {
+    try {
+      sessionStorage.setItem(WS_STATE_KEY, JSON.stringify({ mode: wsDemo ? 'demo' : wsMode, label: wsLabel, path }));
+    } catch (e) { /* 存储不可用时忽略 */ }
+  }
+
+  async function openDemo(preferPath) {
     const res = await fetch('../sample/workspace/manifest.json');
     const paths = await res.json();
     resetWorkspace();
+    wsDemo = true;
     for (const p of paths) {
       const blob = await (await fetch('../' + p)).blob();
       const rel = p.replace(/^sample\/workspace\//, '');
@@ -477,14 +534,46 @@
     wsMode = 'folder';
     showPanel('示例工作区');
     buildTree();
-    await openFirstOrNotice();
+    await openFirstOrNotice(preferPath);
   }
 
   $('#ws-demo').addEventListener('click', e => { e.preventDefault(); openDemo(); });
 
   // ---------- URL 参数：popup 按钮跳转时高亮建议入口；?demo=1 直接加载示例 ----------
-  const pick = new URLSearchParams(location.search).get('pick');
+  const params = new URLSearchParams(location.search);
+  const pick = params.get('pick');
   if (pick === 'file') $('#ws-pick-file').classList.add('mdv-suggested');
   if (pick === 'folder') $('#ws-pick-folder').classList.add('mdv-suggested');
-  if (new URLSearchParams(location.search).get('demo') === '1') openDemo();
+
+  // ---------- 刷新自动恢复：回到上次的文件夹与文件（授权失效则留在主屏） ----------
+  async function restoreSession() {
+    let st = null;
+    try { st = JSON.parse(sessionStorage.getItem(WS_STATE_KEY) || 'null'); } catch (e) { return; }
+    if (!st || !st.path) return;
+    if (st.mode === 'demo') { await openDemo(st.path); return; }
+    if (st.mode !== 'folder' || !st.label) return;
+    try {
+      const db = await idbOpen();
+      const all = await new Promise((res, rej) => {
+        const req = db.transaction('recents').objectStore('recents').getAll();
+        req.onsuccess = () => res(req.result || []);
+        req.onerror = () => rej(req.error);
+      });
+      const recent = all.find(x => x.id === st.label);
+      if (!recent || !recent.handle) return;
+      const perm = await recent.handle.queryPermission({ mode: 'read' });
+      if (perm !== 'granted') return; // 需要重新授权时无法静默进行，留在主屏
+      await openDirectory(recent.handle, st.path);
+    } catch (e) {
+      console.error('MDV workspace 恢复失败:', e);
+    }
+  }
+
+  if (params.get('demo') === '1') {
+    let saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem(WS_STATE_KEY) || 'null'); } catch (e) {}
+    openDemo(saved && saved.mode === 'demo' ? saved.path : undefined);
+  } else {
+    restoreSession(); // 无论是否带 pick 参数都尝试恢复；失败才停在主屏
+  }
 })();

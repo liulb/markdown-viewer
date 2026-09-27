@@ -14,6 +14,9 @@
   if (window.__MDV_READY__) return;
   window.__MDV_READY__ = true;
 
+  // 渲染是异步的，浏览器原生的滚动恢复会失效，由本脚本接管
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
   // ---------- 存储抽象：扩展环境用 chrome.storage.sync，预览页回退 localStorage ----------
   const DEFAULTS = { theme: 'auto', view: 'rendered', tocAuto: true, zoom: 1 };
   const hasChromeStorage = typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync;
@@ -39,6 +42,9 @@
   let RAW = '';
   let settings = { ...DEFAULTS };
   let headings = [];
+  let tocLinks = new Map();  // 目录 id -> <a>（滚动高亮用，渲染后缓存）
+  let headingNodes = [];     // {id, node} 标题节点缓存
+  let currentActive = null;  // 当前高亮的目录项
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
 
   const $ = sel => document.querySelector(sel);
@@ -192,9 +198,23 @@
     });
 
     toc.append(title, rootList);
+
+    // 缓存目录链接与标题节点，滚动定位不再每帧查 DOM
+    tocLinks = new Map();
+    toc.querySelectorAll('a[data-target]').forEach(a => tocLinks.set(a.dataset.target, a));
+    headingNodes = headings.map(h => ({ id: h.id, node: document.getElementById(h.id) }));
+    setActive(null);
   }
 
-  // ---------- 滚动定位：高亮当前视口内的标题 ----------
+  // ---------- 滚动定位：二分查找 + 仅在选中项变化时更新样式 ----------
+  function setActive(id) {
+    if (id === currentActive) return;
+    if (currentActive) tocLinks.get(currentActive)?.classList.remove('mdv-active');
+    currentActive = id;
+    if (id) tocLinks.get(id)?.classList.add('mdv-active');
+  }
+
+  // ---------- 滚动定位：rAF 节流 + 二分查找（标题在文档中单调递增） ----------
   let ticking = false;
   function onScroll() {
     if (ticking) return;
@@ -202,15 +222,17 @@
     requestAnimationFrame(() => {
       ticking = false;
       if (document.body.classList.contains('mdv-source')) return;
-      let current = null;
-      for (const { id } of headings) {
-        const node = document.getElementById(id);
-        if (node && node.getBoundingClientRect().top <= 120) current = id;
-        else if (node) break;
+      const nodes = headingNodes;
+      if (!nodes.length) { setActive(null); return; }
+      let lo = 0, hi = nodes.length - 1, ans = -1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const node = nodes[mid].node;
+        if (!node) break;
+        if (node.getBoundingClientRect().top <= 120) { ans = mid; lo = mid + 1; }
+        else hi = mid - 1;
       }
-      $('#mdv-toc')?.querySelectorAll('a').forEach(link => {
-        link.classList.toggle('mdv-active', link.dataset.target === current);
-      });
+      setActive(ans === -1 ? null : nodes[ans].id);
     });
   }
 
@@ -251,6 +273,19 @@
     }
   }
 
+  // ---------- 侧栏滚轮隔离：面板滚不动时不再链式滚动正文 ----------
+  function lockPanelWheel(panel) {
+    panel.addEventListener('wheel', e => {
+      if (!e.deltaY) return;
+      const canScroll = panel.scrollHeight > panel.clientHeight;
+      const atTop = panel.scrollTop <= 0;
+      const atEnd = panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 1;
+      if (!canScroll || (e.deltaY < 0 && atTop) || (e.deltaY > 0 && atEnd)) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+  }
+
   function buildShell() {
     // 重建渲染壳；工作区侧栏的展开状态需保留（其面板节点在下方原样恢复）
     const wsOpen = document.body.classList.contains('mdv-ws-open');
@@ -284,17 +319,22 @@
 
     const toc = el('aside', { id: 'mdv-toc' });
     const article = el('article', { id: 'mdv-content', className: 'markdown-body' });
-    const source = el('pre', { id: 'mdv-source' });
+    const source = el('div', { id: 'mdv-source' });
 
-    document.body.append(header, toc, article, source);
+    const main = el('div', { id: 'mdv-main' });
+    main.append(article, source);
+
+    document.body.append(header, toc, main);
     kept.forEach(node => document.body.appendChild(node));
+    lockPanelWheel(toc);
+    main.addEventListener('scroll', () => { onScroll(); savePosSoon(); }, { passive: true });
 
     btnToc.addEventListener('click', () => {
       const open = document.body.classList.toggle('mdv-toc-open');
       btnToc.classList.toggle('mdv-on', open);
       if (open) onScrollForce();
     });
-    docTitle.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    docTitle.addEventListener('click', () => { main.scrollTop = 0; });
     btnZoomOut.addEventListener('click', () => adjustZoom(-0.1));
     btnZoomIn.addEventListener('click', () => adjustZoom(0.1));
     zoomLabel.addEventListener('click', () => resetZoom());
@@ -429,7 +469,62 @@
     if (settings.theme === 'auto' && RAW) applyTheme(true);
   });
 
-  window.addEventListener('scroll', onScroll, { passive: true });
+  // 滚动监听挂载在 #mdv-main 上（见 buildShell），页面本身不再滚动
+
+  // ---------- 刷新后恢复阅读位置（按页面/文件维度存 sessionStorage） ----------
+  const posKey = () => 'mdv-pos:' + (window.__MDV_POS_KEY__ || location.href);
+  let posSaveTimer = 0;
+
+  function savePosNow() {
+    if (!RAW) return;
+    const main = $('#mdv-main');
+    if (!main) return;
+    try { sessionStorage.setItem(posKey(), String(Math.round(main.scrollTop))); } catch (e) { /* 存储不可用时忽略 */ }
+  }
+
+  function savePosSoon() {
+    if (!RAW) return;
+    clearTimeout(posSaveTimer);
+    posSaveTimer = setTimeout(savePosNow, 250);
+  }
+
+  // 刷新/关闭前的最后一刻同步保存，避免与防抖竞争
+  window.addEventListener('pagehide', () => {
+    try { savePosNow(); } catch (e) {}
+  });
+
+  function restorePos() {
+    let y = 0;
+    try { y = Number(sessionStorage.getItem(posKey()) || 0); } catch (e) { return; }
+    if (!y) return;
+    const main = $('#mdv-main');
+    if (!main) return;
+    window.__MDV_RESTORE_Y__ = y;
+    const apply = () => {
+      if (window.__MDV_RESTORE_Y__ == null) return;
+      main.scrollTop = window.__MDV_RESTORE_Y__;
+    };
+    apply();
+    // 图片/公式/图表撑高布局前先校正几次；用户一旦有任何交互（滚动/点击跳转）立即停止
+    [200, 500, 1000].forEach(ms => setTimeout(apply, ms));
+    const stop = () => { window.__MDV_RESTORE_Y__ = null; };
+    ['wheel', 'touchmove', 'keydown', 'click', 'mousedown'].forEach(type =>
+      window.addEventListener(type, stop, { passive: true, once: true }));
+  }
+
+  // ---------- 源码视图（带行号，横向滚动对齐） ----------
+  function buildSource() {
+    const source = getSource();
+    if (!source) return;
+    const lineCount = RAW.split('\n').length;
+    const gutter = el('div', {
+      className: 'mdv-src-gutter',
+      textContent: Array.from({ length: lineCount }, (_, i) => i + 1).join('\n')
+    });
+    const text = el('pre', { className: 'mdv-src-text', textContent: RAW });
+    source.textContent = '';
+    source.append(gutter, text);
+  }
 
   // ---------- 启动 ----------
   async function boot(presetRaw) {
@@ -438,7 +533,7 @@
     if (!RAW.trim()) return;
     buildShell();
     applyZoom();
-    getSource().textContent = RAW;
+    buildSource();
     await renderInto(getArticle(), RAW);
     setTitle();
     if (settings.view === 'source') toggleSource(true);
@@ -446,15 +541,17 @@
       document.body.classList.add('mdv-toc-open');
       $('#mdv-btn-toc')?.classList.add('mdv-on');
     }
+    restorePos();
   }
 
   // 供预览页/工作区页调用：boot 重建整个壳，renderFile 仅切换文档内容
   window.__mdvBoot = boot;
   window.__mdvRenderFile = async raw => {
     RAW = String(raw).replace(/\r\n/g, '\n');
-    getSource().textContent = RAW;
+    buildSource();
     await renderInto(getArticle(), RAW);
     setTitle();
+    restorePos();
   };
   window.__MDV_POST_RENDER = window.__MDV_POST_RENDER || [];
 
