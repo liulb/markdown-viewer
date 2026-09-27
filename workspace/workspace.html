@@ -27,11 +27,19 @@
     </div>
   </div>
 
-  <!-- 左侧文件树 -->
+  <!-- 右侧文件面板（工作区） -->
   <aside id="mdv-ws" data-mdv-keep hidden>
     <div class="mdv-ws-head">
       <span class="mdv-ws-title" id="ws-title">工作区</span>
-      <button type="button" id="ws-change" title="更换文件 / 文件夹">⇆</button>
+      <button type="button" id="ws-open-folder" title="打开其他文件夹">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M1.5 4c0-.55.45-1 1-1h2.9l1.4 1.4h6.7c.55 0 1 .45 1 1V12c0 .55-.45 1-1 1h-11c-.55 0-1-.45-1-1V4z" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M8 6.2v4M6 8.2h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="mdv-ws-search">
+      <input type="text" id="ws-search" placeholder="搜索文件…" spellcheck="false">
     </div>
     <div class="mdv-ws-tree" id="ws-tree"></div>
   </aside>

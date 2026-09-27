@@ -15,7 +15,7 @@
   window.__MDV_READY__ = true;
 
   // ---------- 存储抽象：扩展环境用 chrome.storage.sync，预览页回退 localStorage ----------
-  const DEFAULTS = { theme: 'auto', view: 'rendered', tocAuto: true };
+  const DEFAULTS = { theme: 'auto', view: 'rendered', tocAuto: true, zoom: 1 };
   const hasChromeStorage = typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync;
 
   const store = {
@@ -242,7 +242,13 @@
     const firstHeading = headings[0] && headings[0].level === 1 ? headings[0].text : null;
     const name = window.__MDV_DOC_NAME ||
       decodeURIComponent((location.pathname.split('/').pop() || '').replace(/\.(md|markdown|mdown|mkd)$/i, ''));
-    document.title = firstHeading || name || 'Markdown';
+    const title = firstHeading || name || 'Markdown';
+    document.title = title;
+    const headerTitle = $('#mdv-title');
+    if (headerTitle) {
+      headerTitle.textContent = name || title;
+      headerTitle.title = `${title}（点击回到页首）`;
+    }
   }
 
   function buildShell() {
@@ -253,17 +259,34 @@
     const kept = [...document.body.querySelectorAll('[data-mdv-keep]')];
     document.body.textContent = '';
 
-    const bar = el('div', { id: 'mdv-toolbar' });
-    const btnToc = el('button', { id: 'mdv-btn-toc', textContent: '☰', title: '目录 (Markdown Viewer)' });
+    // ---- 顶栏：左（菜单/标题） 中（缩放/源码） 右（面板/主题） ----
+    const header = el('div', { id: 'mdv-header' });
+    const left = el('div', { className: 'mdv-hgroup mdv-hleft' });
+    const center = el('div', { className: 'mdv-hgroup mdv-hcenter' });
+    const right = el('div', { className: 'mdv-hgroup mdv-hright' });
+
+    const btnToc = el('button', { id: 'mdv-btn-toc', textContent: '☰', title: '目录' });
+    const docTitle = el('span', { id: 'mdv-title', className: 'mdv-title', title: '回到页首' });
+
+    const btnZoomOut = el('button', { id: 'mdv-zoom-out', textContent: '−', title: '缩小字号' });
+    const zoomLabel = el('button', { id: 'mdv-zoom-label', textContent: '100%', title: '点击重置为 100%' });
+    const btnZoomIn = el('button', { id: 'mdv-zoom-in', textContent: '+', title: '放大字号' });
+    const sep = el('span', { className: 'mdv-hsep' });
     const btnSrc = el('button', { id: 'mdv-btn-src', textContent: '‹/›', title: '查看原始 Markdown' });
+
+    const btnWs = el('button', { id: 'mdv-btn-ws', textContent: '▤', title: '文件面板' });
     const btnTheme = el('button', { id: 'mdv-btn-theme', textContent: '◐', title: '切换主题' });
-    bar.append(btnToc, btnSrc, btnTheme);
+
+    left.append(btnToc, docTitle);
+    center.append(btnZoomOut, zoomLabel, btnZoomIn, sep, btnSrc);
+    right.append(btnWs, btnTheme);
+    header.append(left, center, right);
 
     const toc = el('aside', { id: 'mdv-toc' });
     const article = el('article', { id: 'mdv-content', className: 'markdown-body' });
     const source = el('pre', { id: 'mdv-source' });
 
-    document.body.append(bar, toc, article, source);
+    document.body.append(header, toc, article, source);
     kept.forEach(node => document.body.appendChild(node));
 
     btnToc.addEventListener('click', () => {
@@ -271,8 +294,36 @@
       btnToc.classList.toggle('mdv-on', open);
       if (open) onScrollForce();
     });
+    docTitle.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    btnZoomOut.addEventListener('click', () => adjustZoom(-0.1));
+    btnZoomIn.addEventListener('click', () => adjustZoom(0.1));
+    zoomLabel.addEventListener('click', () => resetZoom());
     btnSrc.addEventListener('click', () => toggleSource());
+    btnWs.addEventListener('click', () => {
+      const open = document.body.classList.toggle('mdv-ws-open');
+      btnWs.classList.toggle('mdv-on', open);
+    });
     btnTheme.addEventListener('click', () => cycleTheme());
+  }
+
+  // ---------- 字号缩放 ----------
+  function applyZoom() {
+    document.documentElement.style.setProperty('--mdv-zoom', String(settings.zoom ?? 1));
+    const label = $('#mdv-zoom-label');
+    if (label) label.textContent = Math.round((settings.zoom ?? 1) * 100) + '%';
+  }
+
+  async function adjustZoom(delta) {
+    const cur = settings.zoom ?? 1;
+    settings.zoom = Math.min(2, Math.max(0.5, Math.round((cur + delta) * 10) / 10));
+    await store.set({ zoom: settings.zoom });
+    applyZoom();
+  }
+
+  async function resetZoom() {
+    settings.zoom = 1;
+    await store.set({ zoom: 1 });
+    applyZoom();
   }
 
   function onScrollForce() {
@@ -354,14 +405,19 @@
   if (hasChromeStorage) {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== 'sync') return;
-      let dirty = false;
+      if (changes.zoom && changes.zoom.newValue !== settings.zoom) {
+        settings.zoom = changes.zoom.newValue;
+        applyZoom();
+      }
+      let structural = false;
       for (const [key, { newValue }] of Object.entries(changes)) {
+        if (key === 'zoom') continue;
         if (key in settings && settings[key] !== newValue) {
           settings[key] = newValue;
-          dirty = true;
+          structural = true;
         }
       }
-      if (!dirty) return;
+      if (!structural) return;
       applyTheme(false);
       toggleSource(settings.view === 'source');
       if (RAW) renderInto(getArticle(), RAW);
@@ -381,6 +437,7 @@
     RAW = presetRaw !== undefined ? presetRaw.replace(/\r\n/g, '\n') : extractRaw();
     if (!RAW.trim()) return;
     buildShell();
+    applyZoom();
     getSource().textContent = RAW;
     await renderInto(getArticle(), RAW);
     setTitle();

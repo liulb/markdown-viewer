@@ -187,7 +187,26 @@
       const a = e.target.closest('a.mdv-ws-file');
       if (a) openFile(a.dataset.path);
     };
+    applyFileFilter();
   }
+
+  // ---------- 文件搜索过滤（保留输入，重建树后自动重放） ----------
+  function applyFileFilter() {
+    const input = $('#ws-search');
+    const q = (input.value || '').trim().toLowerCase();
+    tree.querySelectorAll('a.mdv-ws-file').forEach(a => {
+      const hit = !q || a.dataset.path.toLowerCase().includes(q);
+      a.parentElement.style.display = hit ? '' : 'none';
+    });
+    tree.querySelectorAll('details').forEach(d => {
+      const visible = [...d.querySelectorAll('a.mdv-ws-file')]
+        .some(a => a.parentElement.style.display !== 'none');
+      d.style.display = visible ? '' : 'none';
+      if (q && visible) d.open = true;
+    });
+  }
+
+  $('#ws-search').addEventListener('input', applyFileFilter);
 
   function markActive(path) {
     tree.querySelectorAll('a.mdv-ws-file').forEach(a =>
@@ -341,8 +360,8 @@
     await openFile(file.name);
   });
 
-  // ---------- 入口：选择文件夹 ----------
-  $('#ws-pick-folder').addEventListener('click', async () => {
+  // ---------- 入口：选择文件夹（主屏按钮与面板内按钮共用） ----------
+  async function pickFolder() {
     try {
       const dir = await showDirectoryPicker({ mode: 'read' });
       await openDirectory(dir);
@@ -352,9 +371,10 @@
         showBanner(`打开文件夹失败：${e && e.message || e}`);
       }
     }
-  });
+  }
 
-  $('#ws-change').addEventListener('click', () => { hero.hidden = false; });
+  $('#ws-pick-folder').addEventListener('click', pickFolder);
+  $('#ws-open-folder').addEventListener('click', pickFolder);
 
   // ---------- 最近打开（IndexedDB 保存目录句柄） ----------
   function idbOpen() {
